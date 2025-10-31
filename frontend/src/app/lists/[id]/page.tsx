@@ -12,6 +12,43 @@ interface Task {
   priority: number;
   dueAt?: string;
   createdAt: string;
+  subtasks?: Subtask[];
+  comments?: Comment[];
+  attachments?: Attachment[];
+  tags?: { tag: Tag }[];
+}
+
+interface Subtask {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name?: string;
+    email: string;
+  };
+}
+
+interface Attachment {
+  id: string;
+  filename: string;
+  url: string;
+  size?: number;
+  mimeType?: string;
+  createdAt: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  color?: string;
 }
 
 interface List {
@@ -29,6 +66,10 @@ export default function ListDetail() {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editDueAt, setEditDueAt] = useState('');
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
+  const [selectedTagId, setSelectedTagId] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
   const { id } = useParams();
@@ -166,6 +207,120 @@ export default function ListDetail() {
     }
   };
 
+  // Subtask functions
+  const createSubtask = async (taskId: string, title: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}/subtasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title }),
+      });
+
+      if (res.ok) {
+        await fetchTasks();
+      } else {
+        setError('Failed to create subtask');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  const updateSubtaskStatus = async (subtaskId: string, status: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      await fetch(`http://localhost:3001/api/subtasks/${subtaskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      await fetchTasks();
+    } catch {
+      setError('Failed to update subtask');
+    }
+  };
+
+  // Comment functions
+  const createComment = async (taskId: string, content: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (res.ok) {
+        await fetchTasks();
+      } else {
+        setError('Failed to create comment');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  // Tag functions
+  const fetchTags = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch('http://localhost:3001/api/tags', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableTags(data);
+      }
+    } catch {
+      // Ignore errors for tags
+    }
+  }, []);
+
+  const addTagToTask = async (taskId: string, tagId: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}/tags/${tagId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        await fetchTasks();
+      } else {
+        setError('Failed to add tag');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  useEffect(() => {
+    fetchList();
+    fetchTasks();
+    fetchTags();
+  }, [fetchList, fetchTasks, fetchTags]);
+
   if (!list) return <div>Loading...</div>;
 
   return (
@@ -232,6 +387,142 @@ export default function ListDetail() {
                         <span>Due: {new Date(task.dueAt).toLocaleString()}</span>
                       )}
                       <span>Status: {task.status}</span>
+                    </div>
+
+                    {/* Tags */}
+                    {task.tags && task.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {task.tags.map((taskTag) => (
+                          <span
+                            key={taskTag.tag.id}
+                            className="px-2 py-1 text-xs rounded"
+                            style={{ backgroundColor: taskTag.tag.color || '#e5e7eb', color: '#374151' }}
+                          >
+                            {taskTag.tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Subtasks */}
+                    {task.subtasks && task.subtasks.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Subtasks</h4>
+                        <div className="space-y-1">
+                          {task.subtasks.map((subtask) => (
+                            <div key={subtask.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={subtask.status === 'done'}
+                                onChange={(e) => updateSubtaskStatus(subtask.id, e.target.checked ? 'done' : 'todo')}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              />
+                              <span className={`text-sm ${subtask.status === 'done' ? 'line-through text-gray-500' : ''}`}>
+                                {subtask.title}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Subtask */}
+                    <div className="mt-4">
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (newSubtaskTitle.trim()) {
+                          createSubtask(task.id, newSubtaskTitle.trim());
+                          setNewSubtaskTitle('');
+                        }
+                      }} className="flex space-x-2">
+                        <input
+                          type="text"
+                          value={newSubtaskTitle}
+                          onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                          placeholder="Add subtask"
+                          className="flex-1 px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <button
+                          type="submit"
+                          className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                        >
+                          Add
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* Comments */}
+                    {task.comments && task.comments.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Comments</h4>
+                        <div className="space-y-2">
+                          {task.comments.map((comment) => (
+                            <div key={comment.id} className="bg-gray-50 p-3 rounded">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <p className="text-sm text-gray-800">{comment.content}</p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {comment.author.name || comment.author.email} • {new Date(comment.createdAt).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Comment */}
+                    <div className="mt-4">
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (newComment.trim()) {
+                          createComment(task.id, newComment.trim());
+                          setNewComment('');
+                        }
+                      }} className="space-y-2">
+                        <textarea
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder="Add a comment"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          rows={2}
+                        />
+                        <button
+                          type="submit"
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        >
+                          Comment
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* Add Tag */}
+                    <div className="mt-4">
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (selectedTagId) {
+                          addTagToTask(task.id, selectedTagId);
+                          setSelectedTagId('');
+                        }
+                      }} className="flex space-x-2">
+                        <select
+                          value={selectedTagId}
+                          onChange={(e) => setSelectedTagId(e.target.value)}
+                          className="flex-1 px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="">Select tag</option>
+                          {availableTags.map((tag) => (
+                            <option key={tag.id} value={tag.id}>{tag.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="submit"
+                          className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                        >
+                          Add Tag
+                        </button>
+                      </form>
                     </div>
                   </div>
                   <div className="flex space-x-2">

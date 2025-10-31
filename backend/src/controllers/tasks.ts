@@ -28,6 +28,22 @@ export const getTasks = async (request: FastifyRequest, reply: FastifyReply) => 
       list: { ownerId: user.id },
       ...(listId && { listId }),
     },
+    include: {
+      subtasks: true,
+      comments: {
+        include: {
+          author: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      },
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+      attachments: true,
+    },
   });
   reply.send(tasks);
 };

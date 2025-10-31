@@ -4,6 +4,10 @@ import cors from '@fastify/cors';
 import authRoutes from './routes/auth';
 import listRoutes from './routes/lists';
 import taskRoutes from './routes/tasks';
+import subtaskRoutes from './routes/subtasks';
+import commentRoutes from './routes/comments';
+import tagRoutes from './routes/tags';
+import attachmentRoutes from './routes/attachments';
 
 const fastify = Fastify({ logger: true });
 
@@ -16,6 +20,10 @@ fastify.register(cors, {
 fastify.register(authRoutes);
 fastify.register(listRoutes);
 fastify.register(taskRoutes);
+fastify.register(subtaskRoutes);
+fastify.register(commentRoutes);
+fastify.register(tagRoutes);
+fastify.register(attachmentRoutes);
 
 // Basic route
 fastify.get('/', async (request, reply) => {
