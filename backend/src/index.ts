@@ -2,6 +2,8 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import authRoutes from './routes/auth';
+import listRoutes from './routes/lists';
+import taskRoutes from './routes/tasks';
 
 const fastify = Fastify({ logger: true });
 
@@ -12,6 +14,8 @@ fastify.register(cors, {
 
 // Register routes
 fastify.register(authRoutes);
+fastify.register(listRoutes);
+fastify.register(taskRoutes);
 
 // Basic route
 fastify.get('/', async (request, reply) => {
