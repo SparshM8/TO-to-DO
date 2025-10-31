@@ -319,6 +319,13 @@ export default function ListDetail() {
     fetchList();
     fetchTasks();
     fetchTags();
+
+    // Auto-refresh tasks every 30 seconds for realtime-like experience
+    const interval = setInterval(() => {
+      fetchTasks();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [fetchList, fetchTasks, fetchTags]);
 
   if (!list) return <div>Loading...</div>;
