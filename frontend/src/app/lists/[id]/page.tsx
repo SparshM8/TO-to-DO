@@ -71,6 +71,8 @@ export default function ListDetail() {
   const [newComment, setNewComment] = useState('');
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTagId, setSelectedTagId] = useState('');
+  const [aiInput, setAiInput] = useState('');
+  const [aiParsedTask, setAiParsedTask] = useState<any>(null);
   const [error, setError] = useState('');
   const router = useRouter();
   const { id } = useParams();
@@ -317,6 +319,86 @@ export default function ListDetail() {
     }
   };
 
+  // AI parsing function
+  const parseTaskWithAI = async (text: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch('http://localhost:3001/api/ai/parse-task', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text, listId: id }),
+      });
+
+      if (res.ok) {
+        const parsedTask = await res.json();
+        setAiParsedTask(parsedTask);
+      } else {
+        setError('Failed to parse task with AI');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  const createTaskFromAI = async () => {
+    if (!aiParsedTask) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch('http://localhost:3001/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          listId: id,
+          title: aiParsedTask.title,
+          description: aiParsedTask.description,
+          priority: aiParsedTask.priority,
+          dueAt: aiParsedTask.dueAt,
+        }),
+      });
+
+      if (res.ok) {
+        const newTask = await res.json();
+        await fetchTasks();
+
+        // Create subtasks if any
+        if (aiParsedTask.subtasks && aiParsedTask.subtasks.length > 0) {
+          for (const subtaskTitle of aiParsedTask.subtasks) {
+            await createSubtask(newTask.id, subtaskTitle);
+          }
+        }
+
+        // Add tags if any
+        if (aiParsedTask.tags && aiParsedTask.tags.length > 0) {
+          for (const tagName of aiParsedTask.tags) {
+            // First create or find tag
+            const existingTag = availableTags.find(t => t.name === tagName);
+            if (existingTag) {
+              await addTagToTask(newTask.id, existingTag.id);
+            }
+          }
+        }
+
+        setAiInput('');
+        setAiParsedTask(null);
+      } else {
+        setError('Failed to create task');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
   useEffect(() => {
     fetchList();
     fetchTasks();
@@ -386,6 +468,69 @@ export default function ListDetail() {
               </button>
             </div>
           </form>
+
+          {/* AI Task Parser */}
+          <div className="bg-white p-6 rounded-lg shadow mt-6">
+            <h2 className="text-lg font-medium mb-4">AI Task Assistant</h2>
+            <div className="space-y-4">
+              <textarea
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                placeholder="Describe your task in natural language... e.g., 'Call dentist tomorrow at 2pm, high priority'"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                rows={3}
+              />
+              <button
+                onClick={() => parseTaskWithAI(aiInput)}
+                disabled={!aiInput.trim()}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Parse with AI
+              </button>
+            </div>
+
+            {aiParsedTask && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-md">
+                <h3 className="font-medium text-blue-900 mb-2">AI Parsed Task:</h3>
+                <div className="space-y-2 text-sm">
+                  <p><strong>Title:</strong> {aiParsedTask.title}</p>
+                  {aiParsedTask.description && <p><strong>Description:</strong> {aiParsedTask.description}</p>}
+                  <p><strong>Priority:</strong> {aiParsedTask.priority}</p>
+                  {aiParsedTask.dueAt && <p><strong>Due:</strong> {new Date(aiParsedTask.dueAt).toLocaleString()}</p>}
+                  {aiParsedTask.tags && aiParsedTask.tags.length > 0 && (
+                    <p><strong>Tags:</strong> {aiParsedTask.tags.join(', ')}</p>
+                  )}
+                  {aiParsedTask.subtasks && aiParsedTask.subtasks.length > 0 && (
+                    <p><strong>Subtasks:</strong> {aiParsedTask.subtasks.join(', ')}</p>
+                  )}
+                  {aiParsedTask.suggestions && aiParsedTask.suggestions.length > 0 && (
+                    <div className="mt-2">
+                      <strong>Suggestions:</strong>
+                      <ul className="list-disc list-inside mt-1">
+                        {aiParsedTask.suggestions.map((suggestion: string, index: number) => (
+                          <li key={index}>{suggestion}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button
+                    onClick={createTaskFromAI}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  >
+                    Create Task
+                  </button>
+                  <button
+                    onClick={() => setAiParsedTask(null)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="space-y-4">
             {tasks.map((task) => (

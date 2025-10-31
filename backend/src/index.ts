@@ -8,6 +8,7 @@ import subtaskRoutes from './routes/subtasks';
 import commentRoutes from './routes/comments';
 import tagRoutes from './routes/tags';
 import attachmentRoutes from './routes/attachments';
+import aiRoutes from './routes/ai';
 
 const fastify = Fastify({ logger: true });
 
@@ -24,6 +25,7 @@ fastify.register(subtaskRoutes);
 fastify.register(commentRoutes);
 fastify.register(tagRoutes);
 fastify.register(attachmentRoutes);
+fastify.register(aiRoutes);
 
 // Basic route
 fastify.get('/', async (request, reply) => {
