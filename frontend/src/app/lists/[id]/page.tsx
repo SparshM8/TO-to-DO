@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
 
 interface Task {
   id: string;
@@ -73,6 +74,7 @@ export default function ListDetail() {
   const [error, setError] = useState('');
   const router = useRouter();
   const { id } = useParams();
+  const isOnline = useOnlineStatus();
 
   const fetchList = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -336,9 +338,15 @@ export default function ListDetail() {
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-900">{list.name}</h1>
-            <Link href="/lists" className="text-indigo-600 hover:text-indigo-500">
-              Back to Lists
-            </Link>
+            <div className="flex items-center space-x-4">
+              <div className={`flex items-center space-x-2 ${isOnline ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-600' : 'bg-red-600'}`}></div>
+                <span className="text-sm">{isOnline ? 'Online' : 'Offline'}</span>
+              </div>
+              <Link href="/lists" className="text-indigo-600 hover:text-indigo-500">
+                Back to Lists
+              </Link>
+            </div>
           </div>
         </div>
       </header>
