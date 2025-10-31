@@ -1,5 +1,7 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import authRoutes from './routes/auth';
 
 const fastify = Fastify({ logger: true });
 
@@ -7,6 +9,9 @@ const fastify = Fastify({ logger: true });
 fastify.register(cors, {
   origin: true, // Allow all origins for development
 });
+
+// Register routes
+fastify.register(authRoutes);
 
 // Basic route
 fastify.get('/', async (request, reply) => {
