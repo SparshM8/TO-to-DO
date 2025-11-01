@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -29,6 +29,9 @@ export const getTasks = async (request: FastifyRequest, reply: FastifyReply) => 
       ...(listId && { listId }),
     },
     include: {
+      list: {
+        select: { id: true, name: true },
+      },
       subtasks: true,
       comments: {
         include: {
@@ -65,7 +68,7 @@ export const createTask = async (request: FastifyRequest, reply: FastifyReply) =
     data: {
       listId,
       title,
-      description,
+      description: description || null,
       dueAt: dueAt ? new Date(dueAt) : null,
       priority: priority || 3,
     },

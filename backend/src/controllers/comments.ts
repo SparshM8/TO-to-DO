@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma/client';
+
+const prisma = new PrismaClient();
 
 interface CreateCommentRequest {
   content: string;

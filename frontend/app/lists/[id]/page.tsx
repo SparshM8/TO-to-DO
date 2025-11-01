@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 interface Task {
   id: string;
@@ -52,6 +52,16 @@ interface Tag {
   color?: string;
 }
 
+interface AiParsedTask {
+  title: string;
+  description?: string;
+  priority: number;
+  dueAt?: string;
+  tags?: string[];
+  subtasks?: string[];
+  suggestions?: string[];
+}
+
 interface List {
   id: string;
   name: string;
@@ -72,7 +82,7 @@ export default function ListDetail() {
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [selectedTagId, setSelectedTagId] = useState('');
   const [aiInput, setAiInput] = useState('');
-  const [aiParsedTask, setAiParsedTask] = useState<any>(null);
+  const [aiParsedTask, setAiParsedTask] = useState<AiParsedTask | null>(null);
   const [error, setError] = useState('');
   const router = useRouter();
   const { id } = useParams();
@@ -122,8 +132,11 @@ export default function ListDetail() {
   }, [id]);
 
   useEffect(() => {
-    fetchList();
-    fetchTasks();
+    const loadData = async () => {
+      await fetchList();
+      await fetchTasks();
+    };
+    loadData();
   }, [fetchList, fetchTasks]);
 
   const createTask = async (e: React.FormEvent) => {
@@ -280,24 +293,7 @@ export default function ListDetail() {
     }
   };
 
-  // Tag functions
-  const fetchTags = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
 
-    try {
-      const res = await fetch('http://localhost:3001/api/tags', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setAvailableTags(data);
-      }
-    } catch {
-      // Ignore errors for tags
-    }
-  }, []);
 
   const addTagToTask = async (taskId: string, tagId: string) => {
     const token = localStorage.getItem('token');
@@ -400,17 +396,71 @@ export default function ListDetail() {
   };
 
   useEffect(() => {
-    fetchList();
-    fetchTasks();
-    fetchTags();
+    const loadInitialData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        // Fetch list
+        const listRes = await fetch(`http://localhost:3001/api/lists/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          setList(listData);
+        } else {
+          setError('Failed to fetch list');
+        }
+
+        // Fetch tasks
+        const tasksRes = await fetch(`http://localhost:3001/api/tasks?listId=${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          setTasks(tasksData);
+        } else {
+          setError('Failed to fetch tasks');
+        }
+
+        // Fetch tags
+        const tagsRes = await fetch('http://localhost:3001/api/tags', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (tagsRes.ok) {
+          const tagsData = await tagsRes.json();
+          setAvailableTags(tagsData);
+        }
+      } catch {
+        setError('Network error');
+      }
+    };
+
+    loadInitialData();
 
     // Auto-refresh tasks every 30 seconds for realtime-like experience
-    const interval = setInterval(() => {
-      fetchTasks();
+    const interval = setInterval(async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const tasksRes = await fetch(`http://localhost:3001/api/tasks?listId=${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          setTasks(tasksData);
+        }
+      } catch {
+        // Ignore errors for auto-refresh
+      }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [fetchList, fetchTasks, fetchTags]);
+  }, [id, router]);
 
   if (!list) return <div>Loading...</div>;
 
@@ -444,21 +494,22 @@ export default function ListDetail() {
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 placeholder="Task title"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                 required
               />
               <textarea
                 value={newTaskDescription}
                 onChange={(e) => setNewTaskDescription(e.target.value)}
                 placeholder="Task description"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                 rows={3}
               />
               <input
                 type="datetime-local"
                 value={newTaskDueAt}
                 onChange={(e) => setNewTaskDueAt(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                aria-label="Task due date"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
               />
               <button
                 type="submit"
@@ -477,7 +528,7 @@ export default function ListDetail() {
                 value={aiInput}
                 onChange={(e) => setAiInput(e.target.value)}
                 placeholder="Describe your task in natural language... e.g., 'Call dentist tomorrow at 2pm, high priority'"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                 rows={3}
               />
               <button
@@ -555,8 +606,7 @@ export default function ListDetail() {
                         {task.tags.map((taskTag) => (
                           <span
                             key={taskTag.tag.id}
-                            className="px-2 py-1 text-xs rounded"
-                            style={{ backgroundColor: taskTag.tag.color || '#e5e7eb', color: '#374151' }}
+                            className="px-2 py-1 text-xs rounded text-gray-700 bg-gray-200"
                           >
                             {taskTag.tag.name}
                           </span>
@@ -575,6 +625,7 @@ export default function ListDetail() {
                                 type="checkbox"
                                 checked={subtask.status === 'done'}
                                 onChange={(e) => updateSubtaskStatus(subtask.id, e.target.checked ? 'done' : 'todo')}
+                                aria-label={`Mark ${subtask.title} as ${subtask.status === 'done' ? 'incomplete' : 'complete'}`}
                                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                               />
                               <span className={`text-sm ${subtask.status === 'done' ? 'line-through text-gray-500' : ''}`}>
@@ -600,7 +651,8 @@ export default function ListDetail() {
                           value={newSubtaskTitle}
                           onChange={(e) => setNewSubtaskTitle(e.target.value)}
                           placeholder="Add subtask"
-                          className="flex-1 px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          aria-label="Add subtask"
+                          className="flex-1 px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                         />
                         <button
                           type="submit"
@@ -645,7 +697,8 @@ export default function ListDetail() {
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           placeholder="Add a comment"
-                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          aria-label="Add a comment"
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                           rows={2}
                         />
                         <button
@@ -669,6 +722,7 @@ export default function ListDetail() {
                         <select
                           value={selectedTagId}
                           onChange={(e) => setSelectedTagId(e.target.value)}
+                          aria-label="Select tag to add to task"
                           className="flex-1 px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         >
                           <option value="">Select tag</option>
@@ -700,6 +754,7 @@ export default function ListDetail() {
                     <select
                       value={task.status}
                       onChange={(e) => updateTaskStatus(task.id, e.target.value)}
+                      aria-label="Change task status"
                       className="px-2 py-1 border border-gray-300 rounded text-sm"
                     >
                       <option value="todo">Todo</option>
@@ -762,7 +817,8 @@ export default function ListDetail() {
                         type="text"
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        aria-label="Task title"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white leading-tight focus:outline-none focus:shadow-outline bg-white dark:bg-gray-800"
                         required
                       />
                     </div>
@@ -771,7 +827,8 @@ export default function ListDetail() {
                       <textarea
                         value={editDescription}
                         onChange={(e) => setEditDescription(e.target.value)}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        aria-label="Task description"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white leading-tight focus:outline-none focus:shadow-outline bg-white dark:bg-gray-800"
                         rows={3}
                       />
                     </div>
@@ -781,7 +838,8 @@ export default function ListDetail() {
                         type="datetime-local"
                         value={editDueAt}
                         onChange={(e) => setEditDueAt(e.target.value)}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        aria-label="Due date"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-white leading-tight focus:outline-none focus:shadow-outline bg-white dark:bg-gray-800"
                       />
                     </div>
                     <div className="flex justify-end space-x-2">

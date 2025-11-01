@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma/client';
+
+const prisma = new PrismaClient();
 
 interface CreateTagRequest {
   name: string;
@@ -17,7 +19,7 @@ export const createTag = async (
     const tag = await prisma.tag.create({
       data: {
         name,
-        color,
+        color: color || null,
       },
     });
 

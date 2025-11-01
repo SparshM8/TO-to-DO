@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -16,32 +16,32 @@ export default function Lists() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const fetchLists = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    try {
-      const res = await fetch('http://localhost:3001/api/lists', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setLists(data);
-      } else {
-        setError('Failed to fetch lists');
-      }
-    } catch {
-      setError('Network error');
-    }
-  }, [router]);
-
   useEffect(() => {
-    fetchLists();
-  }, [fetchLists]);
+    const loadLists = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:3001/api/lists', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setLists(data);
+        } else {
+          setError('Failed to fetch lists');
+        }
+      } catch {
+        setError('Network error');
+      }
+    };
+
+    loadLists();
+  }, [router]);
 
   const createList = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +60,24 @@ export default function Lists() {
 
       if (res.ok) {
         setNewListName('');
-        fetchLists();
+        const loadLists = async () => {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+
+          try {
+            const res = await fetch('http://localhost:3001/api/lists', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              setLists(data);
+            }
+          } catch {
+            // Ignore errors for refresh
+          }
+        };
+        loadLists();
       } else {
         setError('Failed to create list');
       }
@@ -92,7 +109,7 @@ export default function Lists() {
                 value={newListName}
                 onChange={(e) => setNewListName(e.target.value)}
                 placeholder="New list name"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                 required
               />
               <button

@@ -1,7 +1,9 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+
+const prisma = new PrismaClient();
 
 interface CreateAttachmentRequest {
   filename: string;
@@ -34,8 +36,8 @@ export const createAttachment = async (
         taskId,
         filename,
         url,
-        size,
-        mimeType,
+        size: size || null,
+        mimeType: mimeType || null,
       },
     });
 

@@ -27,9 +27,24 @@ fastify.register(tagRoutes);
 fastify.register(attachmentRoutes);
 fastify.register(aiRoutes);
 
-// Basic route
+// API info endpoint
 fastify.get('/', async (request, reply) => {
-  return { hello: 'world' };
+  return {
+    message: 'TO2DO API Server is running!',
+    version: '1.0.0',
+    status: '✅ Active',
+    docs: 'Visit /api/docs for full API documentation',
+    endpoints: [
+      'POST /auth/signup - User registration',
+      'POST /auth/login - User login', 
+      'GET /auth/me - Get current user',
+      'GET /lists - Get user lists',
+      'POST /lists - Create list',
+      'GET /tasks - Get tasks',
+      'POST /tasks - Create task',
+      'POST /ai/parse - AI task parsing'
+    ]
+  };
 });
 
 // Start server
@@ -38,7 +53,7 @@ const start = async () => {
     await fastify.listen({ port: 3001, host: '0.0.0.0' });
     console.log('Server listening on http://localhost:3001');
   } catch (err) {
-    fastify.log.error(err);
+    console.error('Server startup error:', err);
     process.exit(1);
   }
 };

@@ -1,4 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import { PrismaClient } from '../generated/prisma/client';
+
+const prisma = new PrismaClient();
 
 interface ParseTaskRequest {
   text: string;
@@ -28,7 +31,7 @@ export const parseTask = async (
 
     // If listId is provided, verify ownership
     if (listId) {
-      const list = await (global as any).prisma.list.findFirst({
+      const list = await prisma.list.findFirst({
         where: { id: listId, ownerId: userId },
       });
 

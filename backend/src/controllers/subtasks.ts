@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma/client';
+
+const prisma = new PrismaClient();
 
 interface CreateSubtaskRequest {
   title: string;
@@ -90,9 +92,13 @@ export const updateSubtask = async (
       return reply.code(403).send({ error: 'Access denied' });
     }
 
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (status !== undefined) updateData.status = status;
+
     const updatedSubtask = await prisma.subtask.update({
       where: { id },
-      data: { title, status },
+      data: updateData,
     });
 
     reply.send(updatedSubtask);

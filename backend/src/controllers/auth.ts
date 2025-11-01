@@ -1,8 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-// import { PrismaClient } from '../generated/prisma';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -39,7 +38,7 @@ export const signup = async (request: FastifyRequest<{ Body: SignupBody }>, repl
     data: {
       email,
       password: hashedPassword,
-      name,
+      name: name || null,
     },
   });
 
