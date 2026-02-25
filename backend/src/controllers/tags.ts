@@ -9,10 +9,10 @@ interface CreateTagRequest {
 }
 
 export const createTag = async (
-  request: FastifyRequest<{ Body: CreateTagRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { name, color } = request.body;
+  const { name, color } = request.body as CreateTagRequest;
   const userId = (request as any).user.id;
 
   try {
@@ -49,10 +49,10 @@ export const getTags = async (
 };
 
 export const addTagToTask = async (
-  request: FastifyRequest<{ Params: { taskId: string; tagId: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId, tagId } = request.params;
+  const { taskId, tagId } = request.params as { taskId: string; tagId: string };
   const userId = (request as any).user.id;
 
   try {
@@ -87,10 +87,10 @@ export const addTagToTask = async (
 };
 
 export const removeTagFromTask = async (
-  request: FastifyRequest<{ Params: { taskId: string; tagId: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId, tagId } = request.params;
+  const { taskId, tagId } = request.params as { taskId: string; tagId: string };
   const userId = (request as any).user.id;
 
   try {
@@ -120,10 +120,10 @@ export const removeTagFromTask = async (
 };
 
 export const getTaskTags = async (
-  request: FastifyRequest<{ Params: { taskId: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId } = request.params;
+  const { taskId } = request.params as { taskId: string };
   const userId = (request as any).user.id;
 
   try {

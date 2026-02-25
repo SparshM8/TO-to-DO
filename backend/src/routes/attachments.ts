@@ -4,9 +4,10 @@ import {
   getAttachments,
   deleteAttachment,
 } from '../controllers/attachments';
+import { authenticate } from '../middlewares/auth';
 
 export default async function attachmentsRoutes(fastify: FastifyInstance) {
-  fastify.post('/tasks/:taskId/attachments', createAttachment);
-  fastify.get('/tasks/:taskId/attachments', getAttachments);
-  fastify.delete('/attachments/:id', deleteAttachment);
+  fastify.post('/api/tasks/:taskId/attachments', { preHandler: authenticate }, createAttachment);
+  fastify.get('/api/tasks/:taskId/attachments', { preHandler: authenticate }, getAttachments);
+  fastify.delete('/api/attachments/:id', { preHandler: authenticate }, deleteAttachment);
 }

@@ -19,10 +19,11 @@ interface ParsedTask {
 
 // Simple AI-powered task parsing (mock implementation)
 export const parseTask = async (
-  request: FastifyRequest<{ Body: ParseTaskRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { text, listId } = request.body;
+  const body = request.body as ParseTaskRequest;
+  const { text, listId } = body;
   const userId = (request as any).user.id;
 
   try {

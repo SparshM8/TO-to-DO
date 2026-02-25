@@ -13,11 +13,11 @@ interface UpdateSubtaskRequest {
 }
 
 export const createSubtask = async (
-  request: FastifyRequest<{ Params: { taskId: string }; Body: CreateSubtaskRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId } = request.params;
-  const { title } = request.body;
+  const { taskId } = request.params as { taskId: string };
+  const { title } = request.body as CreateSubtaskRequest;
   const userId = (request as any).user.id;
 
   try {
@@ -45,10 +45,10 @@ export const createSubtask = async (
 };
 
 export const getSubtasks = async (
-  request: FastifyRequest<{ Params: { taskId: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId } = request.params;
+  const { taskId } = request.params as { taskId: string };
   const userId = (request as any).user.id;
 
   try {
@@ -74,11 +74,11 @@ export const getSubtasks = async (
 };
 
 export const updateSubtask = async (
-  request: FastifyRequest<{ Params: { id: string }; Body: UpdateSubtaskRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { id } = request.params;
-  const { title, status } = request.body;
+  const { id } = request.params as { id: string };
+  const { title, status } = request.body as UpdateSubtaskRequest;
   const userId = (request as any).user.id;
 
   try {
@@ -108,10 +108,10 @@ export const updateSubtask = async (
 };
 
 export const deleteSubtask = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { id } = request.params;
+  const { id } = request.params as { id: string };
   const userId = (request as any).user.id;
 
   try {

@@ -8,11 +8,11 @@ interface CreateCommentRequest {
 }
 
 export const createComment = async (
-  request: FastifyRequest<{ Params: { taskId: string }; Body: CreateCommentRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId } = request.params;
-  const { content } = request.body;
+  const { taskId } = request.params as { taskId: string };
+  const { content } = request.body as CreateCommentRequest;
   const userId = (request as any).user.id;
 
   try {
@@ -46,10 +46,10 @@ export const createComment = async (
 };
 
 export const getComments = async (
-  request: FastifyRequest<{ Params: { taskId: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId } = request.params;
+  const { taskId } = request.params as { taskId: string };
   const userId = (request as any).user.id;
 
   try {
@@ -80,10 +80,10 @@ export const getComments = async (
 };
 
 export const deleteComment = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { id } = request.params;
+  const { id } = request.params as { id: string };
   const userId = (request as any).user.id;
 
   try {

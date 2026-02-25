@@ -16,11 +16,15 @@ interface LoginBody {
   password: string;
 }
 
-export const signup = async (request: FastifyRequest<{ Body: SignupBody }>, reply: FastifyReply) => {
-  const { email, password, name } = request.body;
+export const signup = async (request: FastifyRequest, reply: FastifyReply) => {
+  const body = request.body as SignupBody;
+  const { email, password, name } = body;
+
+  console.log('Signup attempt:', { email, password, name, body: request.body });
 
   // Basic validation
   if (!email || !password) {
+    console.log('Missing email or password');
     return reply.code(400).send({ error: 'Email and password are required' });
   }
 
@@ -48,10 +52,14 @@ export const signup = async (request: FastifyRequest<{ Body: SignupBody }>, repl
   reply.send({ token, user: { id: user.id, email: user.email, name: user.name } });
 };
 
-export const login = async (request: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) => {
-  const { email, password } = request.body;
+export const login = async (request: FastifyRequest, reply: FastifyReply) => {
+  const body = request.body as LoginBody;
+  const { email, password } = body;
+
+  console.log('Login attempt:', { email, password, body: request.body });
 
   if (!email || !password) {
+    console.log('Missing credentials:', { email, password });
     return reply.code(400).send({ error: 'Email and password are required' });
   }
 

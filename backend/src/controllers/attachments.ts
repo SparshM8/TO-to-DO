@@ -13,11 +13,11 @@ interface CreateAttachmentRequest {
 }
 
 export const createAttachment = async (
-  request: FastifyRequest<{ Params: { taskId: string }; Body: CreateAttachmentRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId } = request.params;
-  const { filename, url, size, mimeType } = request.body;
+  const { taskId } = request.params as { taskId: string };
+  const { filename, url, size, mimeType } = request.body as CreateAttachmentRequest;
   const userId = (request as any).user.id;
 
   try {
@@ -48,10 +48,10 @@ export const createAttachment = async (
 };
 
 export const getAttachments = async (
-  request: FastifyRequest<{ Params: { taskId: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { taskId } = request.params;
+  const { taskId } = request.params as { taskId: string };
   const userId = (request as any).user.id;
 
   try {
@@ -77,10 +77,10 @@ export const getAttachments = async (
 };
 
 export const deleteAttachment = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
-  const { id } = request.params;
+  const { id } = request.params as { id: string };
   const userId = (request as any).user.id;
 
   try {
