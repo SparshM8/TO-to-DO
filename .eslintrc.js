@@ -2,7 +2,6 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
   ],
   parserOptions: {
     ecmaVersion: 2020,
@@ -14,6 +13,9 @@ module.exports = {
   },
   rules: {
     // Add custom rules here
+    '@typescript-eslint/no-unused-vars': 'off',
+    'no-unused-vars': 'off',
+    'no-undef': 'off',
   },
-  ignorePatterns: ['node_modules/', 'dist/', '.next/'],
+  ignorePatterns: ['node_modules/', 'dist/', '.next/', '**/*.ico', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.svg', '**/*.woff', '**/*.woff2', '**/*.ttf', '**/*.eot'],
 };

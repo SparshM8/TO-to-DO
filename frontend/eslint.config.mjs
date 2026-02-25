@@ -12,6 +12,18 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Binary and media files
+    "**/*.ico",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.gif",
+    "**/*.svg",
+    "**/*.woff",
+    "**/*.woff2",
+    "**/*.ttf",
+    "**/*.eot",
+    "**/*.webp",
   ]),
 ]);
 
