@@ -17,7 +17,7 @@ Features such as real-time synchronization, offline-first persistence, analytics
 
 ## Technology stack
 
-The frontend uses **Next.js 16**, React, TypeScript, Tailwind CSS, and the App Router. The backend uses **Node.js**, TypeScript, Fastify, Prisma, and SQLite for the current local development datasource. Authentication uses JWT and bcrypt. The repository is an npm-workspaces monorepo with `frontend/` and `backend/` packages.
+The frontend uses **Next.js 16**, React, TypeScript, Tailwind CSS, and the App Router. The backend uses **Node.js**, TypeScript, Fastify, Prisma ORM 6.19, and MongoDB. Authentication uses JWT and bcrypt. The repository is an npm-workspaces monorepo with `frontend/` and `backend/` packages.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ Use **Node.js 20.9 or newer** and npm. Install dependencies from the repository 
 npm ci
 ```
 
-The backend currently uses the SQLite file configured by `backend/prisma.config.ts` and `backend/prisma/schema.prisma`. For local development, the repository includes a development database fixture. If you need a clean local database, run the Prisma migration workflow from the `backend/` directory according to the project’s migration state.
+The backend reads `DATABASE_URL` from the environment and expects MongoDB. Use MongoDB Atlas or another MongoDB deployment configured as a replica set, because Prisma uses transactions for some nested writes. MongoDB does not use Prisma Migrate; after reviewing a schema change, synchronize it deliberately with `npx prisma db push` from the `backend/` directory. Do not run that command against production without a backup and an explicit review.
 
 ## Environment configuration
 
@@ -75,7 +75,7 @@ The backend auth configuration tests verify development behavior and production 
 
 Deploy the frontend and backend as separate services unless a deliberate reverse-proxy arrangement is added. Configure the frontend’s `NEXT_PUBLIC_API_URL` to the public backend URL and configure the backend’s `JWT_SECRET` with a strong random value of at least 32 characters. Configure CORS on the backend for the exact frontend origin rather than using a broad wildcard in a credentialed deployment.
 
-The current Prisma datasource is SQLite and is appropriate for local development only. Do not place the writable SQLite database on an ephemeral serverless filesystem. For a durable production deployment, migrate the Prisma schema and datasource to a managed persistent database, run migrations during deployment, and back up the database before upgrades. The repository does not currently contain a linked production hosting project or a complete managed-database deployment configuration.
+The Prisma datasource is MongoDB and is intended to connect to a managed persistent deployment such as MongoDB Atlas. Configure the Atlas URI as `DATABASE_URL`, confirm the cluster provides a replica set, and use `npx prisma db push` only as a reviewed schema-synchronization step because Prisma Migrate is not supported for MongoDB. The included `render.yaml` describes the backend web service and keeps `DATABASE_URL` and `FRONTEND_URL` as dashboard-provided secrets. A Vercel frontend still needs its project root set to `frontend` and its public `NEXT_PUBLIC_API_URL` set to the Render API URL.
 
 ## Repository layout
 

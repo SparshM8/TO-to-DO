@@ -10,12 +10,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String     @id @default(uuid())
+  id        String     @id @default(uuid()) @map("_id")
   email     String     @unique
   name      String?
   password  String
@@ -25,7 +25,7 @@ model User {
 }
 
 model List {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   name      String
   ownerId   String
   owner     User     @relation(fields: [ownerId], references: [id])
@@ -34,7 +34,7 @@ model List {
 }
 
 model Task {
-  id          String     @id @default(uuid())
+  id          String     @id @default(uuid()) @map("_id")
   listId      String
   list        List       @relation(fields: [listId], references: [id])
   title       String
@@ -51,7 +51,7 @@ model Task {
 }
 
 model Subtask {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   taskId    String
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   title     String
@@ -61,7 +61,7 @@ model Subtask {
 }
 
 model Tag {
-  id        String    @id @default(uuid())
+  id        String    @id @default(uuid()) @map("_id")
   name      String    @unique
   color     String?
   createdAt DateTime  @default(now())
@@ -69,16 +69,17 @@ model Tag {
 }
 
 model TaskTag {
+  id     String @id @default(uuid()) @map("_id")
   taskId String
   tagId  String
   task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
   tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@id([taskId, tagId])
+  @@unique([taskId, tagId])
 }
 
 model Comment {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   taskId    String
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   authorId  String
@@ -88,7 +89,7 @@ model Comment {
 }
 
 model Attachment {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   taskId    String
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   filename  String

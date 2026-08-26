@@ -12,10 +12,15 @@ import aiRoutes from './routes/ai';
 import { validateProductionConfig } from './config';
 
 const fastify = Fastify({ logger: true });
+const isProduction = process.env.NODE_ENV === 'production';
+const frontendOrigins = process.env.FRONTEND_URL
+  ?.split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-// Register plugins
+// Allow all origins locally, but require an explicit frontend origin in production.
 fastify.register(cors, {
-  origin: true, // Allow all origins for development
+  origin: isProduction ? frontendOrigins ?? false : true,
 });
 
 // Register routes
@@ -27,6 +32,9 @@ fastify.register(commentRoutes);
 fastify.register(tagRoutes);
 fastify.register(attachmentRoutes);
 fastify.register(aiRoutes);
+
+// Health endpoint used by Render and uptime monitors.
+fastify.get('/health', async () => ({ status: 'ok' }));
 
 // API info endpoint
 fastify.get('/', async (request, reply) => {
@@ -52,8 +60,9 @@ fastify.get('/', async (request, reply) => {
 const start = async () => {
   try {
     validateProductionConfig();
-    await fastify.listen({ port: 3001, host: '0.0.0.0' });
-    console.log('Server listening on http://localhost:3001');
+    const port = Number.parseInt(process.env.PORT ?? '3001', 10);
+    await fastify.listen({ port: Number.isFinite(port) ? port : 3001, host: '0.0.0.0' });
+    console.log(`Server listening on port ${Number.isFinite(port) ? port : 3001}`);
   } catch (err) {
     console.error('Server startup error:', err);
     process.exit(1);
