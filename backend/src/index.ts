@@ -9,6 +9,7 @@ import commentRoutes from './routes/comments';
 import tagRoutes from './routes/tags';
 import attachmentRoutes from './routes/attachments';
 import aiRoutes from './routes/ai';
+import { validateProductionConfig } from './config';
 
 const fastify = Fastify({ logger: true });
 
@@ -50,6 +51,7 @@ fastify.get('/', async (request, reply) => {
 // Start server
 const start = async () => {
   try {
+    validateProductionConfig();
     await fastify.listen({ port: 3001, host: '0.0.0.0' });
     console.log('Server listening on http://localhost:3001');
   } catch (err) {

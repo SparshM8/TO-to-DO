@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { apiUrl } from '@/lib/api';
 
 interface Task {
   id: string;
@@ -77,10 +78,10 @@ export default function ListDetail() {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editDueAt, setEditDueAt] = useState('');
-  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
-  const [newComment, setNewComment] = useState('');
+  const [newSubtaskTitles, setNewSubtaskTitles] = useState<Record<string, string>>({});
+  const [newComments, setNewComments] = useState<Record<string, string>>({});
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-  const [selectedTagId, setSelectedTagId] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<Record<string, string>>({});
   const [aiInput, setAiInput] = useState('');
   const [aiParsedTask, setAiParsedTask] = useState<AiParsedTask | null>(null);
   const [error, setError] = useState('');
@@ -96,7 +97,7 @@ export default function ListDetail() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/api/lists/${id}`, {
+      const res = await fetch(apiUrl(`/api/lists/${id}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -116,7 +117,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/tasks?listId=${id}`, {
+      const res = await fetch(apiUrl(`/api/tasks?listId=${id}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -145,7 +146,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:3001/api/tasks', {
+      const res = await fetch(apiUrl('/api/tasks'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +182,7 @@ export default function ListDetail() {
     setTasks(tasks.map(task => task.id === taskId ? { ...task, status } : task));
 
     try {
-      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}`, {
+      const res = await fetch(apiUrl(`/api/tasks/${taskId}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -209,7 +210,7 @@ export default function ListDetail() {
     setTasks(tasks.filter(task => task.id !== taskId));
 
     try {
-      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}`, {
+      const res = await fetch(apiUrl(`/api/tasks/${taskId}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -230,7 +231,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}/subtasks`, {
+      const res = await fetch(apiUrl(`/api/tasks/${taskId}/subtasks`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +255,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      await fetch(`http://localhost:3001/api/subtasks/${subtaskId}`, {
+      await fetch(apiUrl(`/api/subtasks/${subtaskId}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -274,7 +275,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}/comments`, {
+      const res = await fetch(apiUrl(`/api/tasks/${taskId}/comments`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -300,7 +301,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/tasks/${taskId}/tags/${tagId}`, {
+      const res = await fetch(apiUrl(`/api/tasks/${taskId}/tags/${tagId}`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -321,7 +322,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:3001/api/ai/parse-task', {
+      const res = await fetch(apiUrl('/api/ai/parse-task'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -348,7 +349,7 @@ export default function ListDetail() {
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:3001/api/tasks', {
+      const res = await fetch(apiUrl('/api/tasks'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -405,7 +406,7 @@ export default function ListDetail() {
 
       try {
         // Fetch list
-        const listRes = await fetch(`http://localhost:3001/api/lists/${id}`, {
+        const listRes = await fetch(apiUrl(`/api/lists/${id}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (listRes.ok) {
@@ -416,7 +417,7 @@ export default function ListDetail() {
         }
 
         // Fetch tasks
-        const tasksRes = await fetch(`http://localhost:3001/api/tasks?listId=${id}`, {
+        const tasksRes = await fetch(apiUrl(`/api/tasks?listId=${id}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (tasksRes.ok) {
@@ -427,7 +428,7 @@ export default function ListDetail() {
         }
 
         // Fetch tags
-        const tagsRes = await fetch('http://localhost:3001/api/tags', {
+        const tagsRes = await fetch(apiUrl('/api/tags'), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (tagsRes.ok) {
@@ -447,7 +448,7 @@ export default function ListDetail() {
       if (!token) return;
 
       try {
-        const tasksRes = await fetch(`http://localhost:3001/api/tasks?listId=${id}`, {
+        const tasksRes = await fetch(apiUrl(`/api/tasks?listId=${id}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (tasksRes.ok) {
@@ -641,15 +642,16 @@ export default function ListDetail() {
                     <div className="mt-4">
                       <form onSubmit={(e) => {
                         e.preventDefault();
-                        if (newSubtaskTitle.trim()) {
-                          createSubtask(task.id, newSubtaskTitle.trim());
-                          setNewSubtaskTitle('');
+                        const title = (newSubtaskTitles[task.id] ?? '').trim();
+                        if (title) {
+                          createSubtask(task.id, title);
+                          setNewSubtaskTitles((current) => ({ ...current, [task.id]: '' }));
                         }
                       }} className="flex space-x-2">
                         <input
                           type="text"
-                          value={newSubtaskTitle}
-                          onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                          value={newSubtaskTitles[task.id] ?? ''}
+                          onChange={(e) => setNewSubtaskTitles((current) => ({ ...current, [task.id]: e.target.value }))}
                           placeholder="Add subtask"
                           aria-label="Add subtask"
                           className="flex-1 px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
@@ -688,14 +690,15 @@ export default function ListDetail() {
                     <div className="mt-4">
                       <form onSubmit={(e) => {
                         e.preventDefault();
-                        if (newComment.trim()) {
-                          createComment(task.id, newComment.trim());
-                          setNewComment('');
+                        const content = (newComments[task.id] ?? '').trim();
+                        if (content) {
+                          createComment(task.id, content);
+                          setNewComments((current) => ({ ...current, [task.id]: '' }));
                         }
                       }} className="space-y-2">
                         <textarea
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
+                          value={newComments[task.id] ?? ''}
+                          onChange={(e) => setNewComments((current) => ({ ...current, [task.id]: e.target.value }))}
                           placeholder="Add a comment"
                           aria-label="Add a comment"
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
@@ -714,14 +717,15 @@ export default function ListDetail() {
                     <div className="mt-4">
                       <form onSubmit={(e) => {
                         e.preventDefault();
-                        if (selectedTagId) {
-                          addTagToTask(task.id, selectedTagId);
-                          setSelectedTagId('');
+                        const tagId = selectedTagIds[task.id] ?? '';
+                        if (tagId) {
+                          addTagToTask(task.id, tagId);
+                          setSelectedTagIds((current) => ({ ...current, [task.id]: '' }));
                         }
                       }} className="flex space-x-2">
                         <select
-                          value={selectedTagId}
-                          onChange={(e) => setSelectedTagId(e.target.value)}
+                          value={selectedTagIds[task.id] ?? ''}
+                          onChange={(e) => setSelectedTagIds((current) => ({ ...current, [task.id]: e.target.value }))}
                           aria-label="Select tag to add to task"
                           className="flex-1 px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         >
@@ -785,8 +789,8 @@ export default function ListDetail() {
                     if (!token || !editingTask) return;
 
                     try {
-                      const res = await fetch(`http://localhost:3001/api/tasks/${editingTask.id}`, {
-                        method: 'PUT',
+                      const res = await fetch(apiUrl(`/api/tasks/${editingTask.id}`), {
+                        method: 'PATCH',
                         headers: {
                           'Content-Type': 'application/json',
                           Authorization: `Bearer ${token}`,

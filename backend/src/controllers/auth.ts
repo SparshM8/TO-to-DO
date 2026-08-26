@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { PrismaClient } from '../generated/prisma/client';
+import { getJwtSecret } from '../config';
 
 const prisma = new PrismaClient();
 
@@ -16,28 +17,34 @@ interface LoginBody {
   password: string;
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizedCredentials(body: Partial<SignupBody | LoginBody> | undefined) {
+  return {
+    email: typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '',
+    password: typeof body?.password === 'string' ? body.password : '',
+  };
+}
+
+function safeUser(user: { id: string; email: string; name: string | null }) {
+  return { id: user.id, email: user.email, name: user.name };
+}
+
 export const signup = async (request: FastifyRequest, reply: FastifyReply) => {
-  const body = request.body as SignupBody;
-  const { email, password, name } = body;
+  const body = (request.body ?? {}) as Partial<SignupBody>;
+  const { email, password } = normalizedCredentials(body);
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
 
-  console.log('Signup attempt:', { email, password, name, body: request.body });
-
-  // Basic validation
-  if (!email || !password) {
-    console.log('Missing email or password');
-    return reply.code(400).send({ error: 'Email and password are required' });
+  if (!EMAIL_PATTERN.test(email) || password.length < 8) {
+    return reply.code(400).send({ error: 'A valid email and password of at least 8 characters are required' });
   }
 
-  // Check if user exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     return reply.code(400).send({ error: 'User already exists' });
   }
 
-  // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Create user
   const user = await prisma.user.create({
     data: {
       email,
@@ -46,42 +53,28 @@ export const signup = async (request: FastifyRequest, reply: FastifyReply) => {
     },
   });
 
-  // Generate JWT
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-
-  reply.send({ token, user: { id: user.id, email: user.email, name: user.name } });
+  const token = jwt.sign({ userId: user.id }, getJwtSecret(), { expiresIn: '7d' });
+  return reply.send({ token, user: safeUser(user) });
 };
 
 export const login = async (request: FastifyRequest, reply: FastifyReply) => {
-  const body = request.body as LoginBody;
-  const { email, password } = body;
-
-  console.log('Login attempt:', { email, password, body: request.body });
+  const body = (request.body ?? {}) as Partial<LoginBody>;
+  const { email, password } = normalizedCredentials(body);
 
   if (!email || !password) {
-    console.log('Missing credentials:', { email, password });
     return reply.code(400).send({ error: 'Email and password are required' });
   }
 
-  // Find user
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return reply.code(400).send({ error: 'Invalid credentials' });
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return reply.code(401).send({ error: 'Invalid credentials' });
   }
 
-  // Check password
-  const isValid = await bcrypt.compare(password, user.password);
-  if (!isValid) {
-    return reply.code(400).send({ error: 'Invalid credentials' });
-  }
-
-  // Generate JWT
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-
-  reply.send({ token, user: { id: user.id, email: user.email, name: user.name } });
+  const token = jwt.sign({ userId: user.id }, getJwtSecret(), { expiresIn: '7d' });
+  return reply.send({ token, user: safeUser(user) });
 };
 
 export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
-  const user = (request as any).user;
-  reply.send({ user });
+  const user = (request as any).user as { id: string; email: string; name: string | null };
+  return reply.send({ user: safeUser(user) });
 };

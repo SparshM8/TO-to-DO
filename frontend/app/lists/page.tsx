@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { apiUrl } from '@/lib/api';
 
 interface List {
   id: string;
@@ -25,7 +26,7 @@ export default function Lists() {
       }
 
       try {
-        const res = await fetch('http://localhost:3001/api/lists', {
+        const res = await fetch(apiUrl('/api/lists'), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -49,7 +50,7 @@ export default function Lists() {
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:3001/api/lists', {
+      const res = await fetch(apiUrl('/api/lists'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ export default function Lists() {
           if (!token) return;
 
           try {
-            const res = await fetch('http://localhost:3001/api/lists', {
+            const res = await fetch(apiUrl('/api/lists'), {
               headers: { Authorization: `Bearer ${token}` },
             });
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { apiUrl } from '@/lib/api';
 
 interface List {
   id: string;
@@ -40,7 +41,7 @@ export default function Home() {
   const fetchDashboardData = async (token: string) => {
     try {
       // Fetch lists
-      const listsRes = await fetch('http://localhost:3001/api/lists', {
+      const listsRes = await fetch(apiUrl('/api/lists'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (listsRes.ok) {
@@ -54,7 +55,7 @@ export default function Home() {
 
         // Fetch tasks for each list to calculate stats
         for (const list of lists) {
-          const tasksRes = await fetch(`http://localhost:3001/api/tasks?listId=${list.id}`, {
+          const tasksRes = await fetch(apiUrl(`/api/tasks?listId=${list.id}`), {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (tasksRes.ok) {
@@ -73,7 +74,7 @@ export default function Home() {
 
         // Fetch recent tasks
         if (lists.length > 0) {
-          const tasksRes = await fetch('http://localhost:3001/api/tasks', {
+          const tasksRes = await fetch(apiUrl('/api/tasks'), {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (tasksRes.ok) {
@@ -100,7 +101,7 @@ export default function Home() {
     const fetchData = async () => {
       try {
         // Fetch user info
-        const userRes = await fetch('http://localhost:3001/api/users/me', {
+        const userRes = await fetch(apiUrl('/api/users/me'), {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (userRes.ok) {
@@ -309,7 +310,7 @@ export default function Home() {
                   ✅ Add New Task
                 </button>
                 <button
-                  onClick={() => window.open('http://localhost:3001/', '_blank')}
+                  onClick={() => window.open(apiUrl('/'), '_blank')}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                 >
                   🔗 View API Docs
