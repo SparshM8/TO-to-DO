@@ -144,7 +144,7 @@ export const getTaskTags = async (
       },
     });
 
-    reply.send(taskTags.map(tt => tt.tag));
+    reply.send(taskTags.map((tt: { tag: unknown }) => tt.tag));
   } catch (error) {
     reply.code(500).send({ error: 'Failed to fetch task tags' });
   }
