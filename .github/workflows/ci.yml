@@ -14,3 +14,4 @@ jobs:
       - run: npm run lint
       - run: npm run check:frontend-api
       - run: npm run test
+      - run: npm run build
